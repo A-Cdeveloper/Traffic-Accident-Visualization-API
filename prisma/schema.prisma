@@ -25,6 +25,7 @@ model TrafficAccident {
   @@index([city])
   @@index([municipality])
   @@index([dateTime])
+  @@index([municipality, dateTime])
   @@index([latitude, longitude])
   @@map("traffic_accidents")
 }
