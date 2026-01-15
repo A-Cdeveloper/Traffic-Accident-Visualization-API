@@ -15,7 +15,40 @@ The dataset is based on official open data from the Republic of Serbia.
 
 ## Status
 
-Currently the project is empty (boilerplate only). This repository will contain only the API.
+✅ Database schema defined (Prisma ORM with MySQL)  
+✅ Initial data import script implemented  
+✅ Data sources configured (2020-2025)  
+🚧 API routes (in progress)
+
+## Database
+
+The project uses MySQL database with Prisma ORM. The database contains traffic accident data from 2020-2025.
+
+**Schema:**
+
+- `TrafficAccident` model with fields: accidentId, city, municipality, dateTime, coordinates, accidentType, category, description
+
+**Setup:**
+
+1.  Configure `.env` with database credentials
+2.  Run migrations: `npx prisma migrate dev`
+3.  Generate Prisma Client: `npx prisma generate`
+
+## Data Import
+
+Initial data import script is available to populate the database with historical data.
+
+**Run initial import:**
+
+```
+npm run import:initial
+```
+
+This script will:
+
+- Download XLSX files from data.gov.rs (2020-2025)
+- Parse and convert to database format
+- Insert data using batch processing for performance
 
 ## Planned API Route
 
@@ -23,9 +56,18 @@ Currently the project is empty (boilerplate only). This repository will contain 
 
 ## Local Development
 
+**Start development server:**
+
 ```
 npm run dev
 ```
+
+**Available scripts:**
+
+- `npm run dev` - Start Next.js development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run import:initial` - Import initial data from XLSX files
 
 ## Note
 
