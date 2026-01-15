@@ -1,4 +1,3 @@
-// constants/dataSources.ts ili slično
 export const DATA_SOURCES = {
   "2020":
     "https://data.gov.rs/sr/datasets/r/05df84c8-925c-4b71-b77f-899faa73be48",
