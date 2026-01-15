@@ -19,6 +19,7 @@ The dataset is based on official open data from the Republic of Serbia.
 ✅ Initial data import script implemented  
 ✅ Data sources configured (2020-2025)  
 ✅ API routes implemented  
+✅ CORS protection via Next.js 16 proxy  
 ✅ Rate limiting configured  
 ✅ Database indexes optimized
 
@@ -38,7 +39,15 @@ The project uses MySQL database with Prisma ORM. The database contains traffic a
 
 **Setup:**
 
-1.  Configure `.env` with database credentials
+1.  Configure `.env` with your database credentials:
+
+- `DATABASE_HOST` - Database host
+- `DATABASE_USER` - Database username
+- `DATABASE_PASSWORD` - Database password
+- `DATABASE_NAME` - Database name
+- `DATABASE_URL` - Full database connection string
+- `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins (default: `http://localhost:5176`)
+
 2.  Run migrations: `npx prisma migrate dev`
 3.  Generate Prisma Client: `npx prisma generate`
 
@@ -121,6 +130,37 @@ npm run dev
 - `npm run start` - Start production server
 - `npm run import:initial` - Import initial data from XLSX files
 
+## CORS Configuration
+
+The API implements CORS (Cross-Origin Resource Sharing) via Next.js 16 `proxy.ts` to restrict access to allowed frontend origins only.
+
+**Implementation:**
+- CORS is handled at the network boundary using `proxy.ts` (Next.js 16 replaces middleware)
+- All API routes (`/api/*`) are protected by the proxy
+- Preflight OPTIONS requests are automatically handled
+
+**Configuration:**
+
+Set `ALLOWED_ORIGINS` environment variable in `.env` with comma-separated list of allowed origins:
+
+```env
+# Development
+ALLOWED_ORIGINS=http://localhost:5176
+
+# Production (multiple domains)
+ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com,https://app.yourdomain.com
+```
+
+- Default: `http://localhost:5176` (Vite dev server)
+- Multiple origins: Separate with commas (spaces are automatically trimmed)
+
+**Security:**
+
+- Only requests from allowed origins will be processed
+- Returns `403 Forbidden` for requests from unauthorized origins
+- Supports preflight OPTIONS requests for CORS
+- CORS headers are added automatically for allowed origins
+
 ## Rate Limiting
 
 The API implements rate limiting to prevent abuse:
@@ -133,6 +173,7 @@ The API implements rate limiting to prevent abuse:
 The API includes comprehensive error handling:
 
 - **400 Bad Request:** Missing or invalid parameters
+- **403 Forbidden:** Origin not allowed (CORS violation)
 - **429 Too Many Requests:** Rate limit exceeded
 - **500 Internal Server Error:** Server-side errors (logged to console)
 
@@ -141,6 +182,20 @@ The API includes comprehensive error handling:
 - **Database Indexes:** Composite indexes on frequently queried fields
 - **Response Caching:** HTTP cache headers for improved performance
 - **Batch Processing:** Efficient data import with batch transactions
+
+## Architecture
+
+**Next.js 16 App Router:**
+- Uses `proxy.ts` for request interception (replaces middleware in Next.js 16)
+- Proxy handles CORS at the network boundary before requests reach route handlers
+- All `/api/*` routes are protected by the proxy configuration
+
+**Request Flow:**
+1. Request arrives → `proxy.ts` checks origin and adds CORS headers
+2. Rate limiting check → `rateLimiter.ts`
+3. Route handler → `app/api/accidents/route.ts`
+4. Database query → Prisma ORM with optimized indexes
+5. Response with caching headers
 
 ## Note
 
