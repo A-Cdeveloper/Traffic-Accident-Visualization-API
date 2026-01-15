@@ -21,6 +21,7 @@ The dataset is based on official open data from the Republic of Serbia.
 ✅ API routes implemented  
 ✅ CORS protection via Next.js 16 proxy  
 ✅ Rate limiting configured  
+✅ Input validation with Zod  
 ✅ Database indexes optimized
 
 ## Database
@@ -48,8 +49,8 @@ The project uses MySQL database with Prisma ORM. The database contains traffic a
 - `DATABASE_URL` - Full database connection string
 - `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins (default: `http://localhost:5176`)
 
-2.  Run migrations: `npx prisma migrate dev`
-3.  Generate Prisma Client: `npx prisma generate`
+1.  Run migrations: `npx prisma migrate dev`
+2.  Generate Prisma Client: `npx prisma generate`
 
 ## Data Import
 
@@ -76,7 +77,11 @@ Returns traffic accident data filtered by municipality and optional year range.
 **Query Parameters:**
 
 - `municipality` (required) - Municipality name to filter by
+  - Must be between 1-100 characters
+  - Automatically trimmed
 - `years` (optional) - Comma-separated list of years (e.g., `2020,2021,2022`)
+  - Each year must be between 2000 and current year
+  - Automatically parsed and validated
 
 **Example Request:**
 
@@ -110,10 +115,11 @@ GET /api/accidents?municipality=Beograd&years=2023,2024
 
 **Features:**
 
-- Rate limiting: 100 requests per minute
-- Caching: 5 minutes (s-maxage=300)
-- Error handling with proper status codes
-- Optimized database queries with composite indexes
+- **Input Validation:** Zod schema validation for all query parameters
+- **Rate limiting:** 100 requests per minute
+- **Caching:** 5 minutes (s-maxage=300)
+- **Error handling:** Proper status codes with detailed validation errors
+- **Optimized queries:** Database queries with composite indexes
 
 ## Local Development
 
@@ -135,6 +141,7 @@ npm run dev
 The API implements CORS (Cross-Origin Resource Sharing) via Next.js 16 `proxy.ts` to restrict access to allowed frontend origins only.
 
 **Implementation:**
+
 - CORS is handled at the network boundary using `proxy.ts` (Next.js 16 replaces middleware)
 - All API routes (`/api/*`) are protected by the proxy
 - Preflight OPTIONS requests are automatically handled
@@ -143,7 +150,7 @@ The API implements CORS (Cross-Origin Resource Sharing) via Next.js 16 `proxy.ts
 
 Set `ALLOWED_ORIGINS` environment variable in `.env` with comma-separated list of allowed origins:
 
-```env
+```
 # Development
 ALLOWED_ORIGINS=http://localhost:5176
 
@@ -173,9 +180,17 @@ The API implements rate limiting to prevent abuse:
 The API includes comprehensive error handling:
 
 - **400 Bad Request:** Missing or invalid parameters
+  - Returns detailed Zod validation errors with field-specific messages
+  - Example: `{ error: "Invalid request parameters", details: [...] }`
 - **403 Forbidden:** Origin not allowed (CORS violation)
 - **429 Too Many Requests:** Rate limit exceeded
 - **500 Internal Server Error:** Server-side errors (logged to console)
+
+**Validation:**
+
+- All query parameters are validated using Zod schemas
+- Invalid input is rejected early with clear error messages
+- Type-safe validation ensures data integrity
 
 ## Performance Optimizations
 
@@ -186,16 +201,19 @@ The API includes comprehensive error handling:
 ## Architecture
 
 **Next.js 16 App Router:**
+
 - Uses `proxy.ts` for request interception (replaces middleware in Next.js 16)
 - Proxy handles CORS at the network boundary before requests reach route handlers
 - All `/api/*` routes are protected by the proxy configuration
 
 **Request Flow:**
-1. Request arrives → `proxy.ts` checks origin and adds CORS headers
-2. Rate limiting check → `rateLimiter.ts`
-3. Route handler → `app/api/accidents/route.ts`
-4. Database query → Prisma ORM with optimized indexes
-5. Response with caching headers
+
+1.  Request arrives → `proxy.ts` checks origin and adds CORS headers
+2.  Rate limiting check → `rateLimiter.ts`
+3.  Input validation → `lib/zod.ts` validates and parses query parameters
+4.  Route handler → `app/api/accidents/route.ts` processes validated data
+5.  Database query → Prisma ORM with optimized indexes
+6.  Response with caching headers
 
 ## Note
 
