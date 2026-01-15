@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rateLimiter";
+import { accidentsQuerySchema } from "@/lib/zod";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,26 +13,29 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
 
-    const municipality = searchParams.get("municipality");
-    const yearsParam = searchParams.get("years");
+    // Convert URLSearchParams to object for Zod
+    const params = {
+      municipality: searchParams.get("municipality") || undefined,
+      years: searchParams.get("years") || undefined,
+    };
 
-    //  municipality is required
-    if (!municipality || municipality.trim().length === 0) {
+    // Validate with Zod
+    const validationResult = accidentsQuerySchema.safeParse(params);
+
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "municipality is required" },
+        {
+          error: "Invalid request parameters",
+          details: validationResult.error.issues,
+        },
         { status: 400 }
       );
     }
 
-    //  Parse & validate years
-    const yearsArray = yearsParam
-      ? yearsParam
-          .split(",")
-          .map((y) => parseInt(y.trim(), 10))
-          .filter(
-            (y) => !isNaN(y) && y >= 2000 && y <= new Date().getFullYear()
-          )
-      : [];
+    const { municipality, years } = validationResult.data;
+
+    // Years is already validated and parsed by Zod
+    const yearsArray = years ?? [];
 
     //  Build where clause
     const whereClause: {
