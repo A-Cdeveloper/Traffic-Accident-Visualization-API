@@ -22,7 +22,12 @@ The dataset is based on official open data from the Republic of Serbia.
 ✅ CORS protection via Next.js 16 proxy  
 ✅ Rate limiting configured  
 ✅ Input validation with Zod  
-✅ Database indexes optimized
+✅ Database indexes optimized  
+✅ Centralized error handling with custom error classes  
+✅ Health check endpoint for monitoring  
+✅ Security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy)  
+✅ Query timeout protection for database queries  
+✅ Configurable connection pooling
 
 ## Database
 
@@ -42,12 +47,19 @@ The project uses MySQL database with Prisma ORM. The database contains traffic a
 
 1.  Configure `.env` with your database credentials:
 
+**Required:**
+
 - `DATABASE_HOST` - Database host
 - `DATABASE_USER` - Database username
 - `DATABASE_PASSWORD` - Database password
 - `DATABASE_NAME` - Database name
 - `DATABASE_URL` - Full database connection string
+
+**Optional:**
+
 - `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins (default: `http://localhost:5176`)
+- `DATABASE_CONNECTION_LIMIT` - Connection pool limit (default: `5`)
+- `DATABASE_QUERY_TIMEOUT` - Query timeout in milliseconds (default: `30000` = 30 seconds)
 
 1.  Run migrations: `npx prisma migrate dev`
 2.  Generate Prisma Client: `npx prisma generate`
@@ -72,21 +84,25 @@ This script will:
 
 ### `GET /api/accidents`
 
-Returns traffic accident data filtered by pstation and optional year range.
+Returns traffic accident data filtered by pstation and optional filters.
 
 **Query Parameters:**
 
 - `pstation` (required) - Police station name to filter by
   - Must be between 1-100 characters
   - Automatically trimmed
-- `years` (optional) - Comma-separated list of years (e.g., `2020,2021,2022`)
-  - Each year must be between 2000 and current year
-  - Automatically parsed and validated
+- `startDate` (optional) - Start date in ISO format (YYYY-MM-DD)
+- `endDate` (optional) - End date in ISO format (YYYY-MM-DD)
+  - Must be greater than or equal to `startDate`
+- `accidentType` (optional) - Filter by accident type
+  - Valid values: `materijalna`, `povredjeni`, `poginuli`
+- `categories` (optional) - Comma-separated list of categories
+  - Valid values: `jedno-vozilo`, `bez-skretanja`, `sa-skretanjem`, `parkirana`, `pesaci`
 
 **Example Request:**
 
 ```
-GET /api/accidents?pstation=Beograd&years=2023,2024
+GET /api/accidents?pstation=Beograd&startDate=2023-01-01&endDate=2023-12-31&accidentType=materijalna&categories=jedno-vozilo,bez-skretanja
 ```
 
 **Response:**
@@ -94,7 +110,10 @@ GET /api/accidents?pstation=Beograd&years=2023,2024
 ```
 {
   "pstation": "Beograd",
-  "years": [2023, 2024],
+  "startDate": "2023-01-01",
+  "endDate": "2023-12-31",
+  "accidentType": "materijalna",
+  "categories": ["jedno-vozilo", "bez-skretanja"],
   "total": 150,
   "data": [
     {
@@ -105,8 +124,8 @@ GET /api/accidents?pstation=Beograd&years=2023,2024
       "dateTime": "2023-01-15T10:30:00.000Z",
       "longitude": 20.4489,
       "latitude": 44.7866,
-      "accidentType": "Sudar",
-      "category": "Sa povređenim",
+      "accidentType": "Sa materijalnom štetom",
+      "category": "Jedno vozilo",
       "description": "..."
     }
   ]
@@ -118,8 +137,40 @@ GET /api/accidents?pstation=Beograd&years=2023,2024
 - **Input Validation:** Zod schema validation for all query parameters
 - **Rate limiting:** 100 requests per minute
 - **Caching:** 5 minutes (s-maxage=300)
-- **Error handling:** Proper status codes with detailed validation errors
+- **Error handling:** Centralized error handling with custom error classes
+- **Query timeout:** 30 seconds default (configurable via `DATABASE_QUERY_TIMEOUT`)
 - **Optimized queries:** Database queries with composite indexes
+- **Human-readable labels:** Accident types and categories are transformed to readable format in responses
+
+### `GET /api/health`
+
+Health check endpoint for monitoring and deployment verification.
+
+**Response (Success - 200):**
+
+```
+{
+  "status": "ok",
+  "timestamp": "2026-01-16T12:00:00.000Z",
+  "database": "connected"
+}
+```
+
+**Response (Error - 503):**
+
+```
+{
+  "status": "error",
+  "timestamp": "2026-01-16T12:00:00.000Z",
+  "database": "disconnected"
+}
+```
+
+**Features:**
+
+- Checks database connectivity with a simple query
+- 5-second timeout for health check queries
+- Returns appropriate HTTP status codes (200 for healthy, 503 for unhealthy)
 
 ## Local Development
 
@@ -168,6 +219,15 @@ ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com,https://app.yo
 - Supports preflight OPTIONS requests for CORS
 - CORS headers are added automatically for allowed origins
 
+**Security Headers:**
+
+All API responses include the following security headers:
+
+- `X-Content-Type-Options: nosniff` - Prevents MIME type sniffing
+- `X-Frame-Options: DENY` - Prevents clickjacking attacks
+- `X-XSS-Protection: 1; mode=block` - XSS protection
+- `Referrer-Policy: strict-origin-when-cross-origin` - Controls referrer information
+
 ## Rate Limiting
 
 The API implements rate limiting to prevent abuse:
@@ -177,14 +237,32 @@ The API implements rate limiting to prevent abuse:
 
 ## Error Handling
 
-The API includes comprehensive error handling:
+The API includes comprehensive error handling with centralized error management:
+
+**Error Classes:**
+
+- `ApiError` - Base error class for all API errors
+- `ValidationError` - For validation failures (400)
+- `DatabaseError` - For database operation failures (500)
+- `NotFoundError` - For missing resources (404)
+
+**HTTP Status Codes:**
 
 - **400 Bad Request:** Missing or invalid parameters
   - Returns detailed Zod validation errors with field-specific messages
   - Example: `{ error: "Invalid request parameters", details: [...] }`
 - **403 Forbidden:** Origin not allowed (CORS violation)
+- **404 Not Found:** Resource not found (Prisma P2025 error)
+- **409 Conflict:** Duplicate entry (Prisma P2002 error)
 - **429 Too Many Requests:** Rate limit exceeded
-- **500 Internal Server Error:** Server-side errors (logged to console)
+- **500 Internal Server Error:** Server-side errors
+- **503 Service Unavailable:** Database connection failures or query timeouts
+
+**Prisma Error Handling:**
+
+- Automatically handles Prisma-specific error codes (P2002, P2025, etc.)
+- Query timeout errors are caught and returned as 500/503 errors
+- All errors are handled through `handleApiError()` function
 
 **Validation:**
 
@@ -197,6 +275,8 @@ The API includes comprehensive error handling:
 - **Database Indexes:** Composite indexes on frequently queried fields
 - **Response Caching:** HTTP cache headers for improved performance
 - **Batch Processing:** Efficient data import with batch transactions
+- **Connection Pooling:** Configurable connection pool limit (default: 5)
+- **Query Timeout:** Prevents long-running queries from blocking the API (default: 30 seconds)
 
 ## Architecture
 
@@ -208,12 +288,13 @@ The API includes comprehensive error handling:
 
 **Request Flow:**
 
-1.  Request arrives → `proxy.ts` checks origin and adds CORS headers
+1.  Request arrives → `proxy.ts` checks origin, adds CORS and security headers
 2.  Rate limiting check → `rateLimiter.ts`
 3.  Input validation → `lib/zod.ts` validates and parses query parameters
 4.  Route handler → `app/api/accidents/route.ts` processes validated data
-5.  Database query → Prisma ORM with optimized indexes
-6.  Response with caching headers
+5.  Database query → Prisma ORM with query timeout wrapper and optimized indexes
+6.  Error handling → `lib/errors.ts` handles any errors
+7.  Response with caching headers
 
 ## Note
 
