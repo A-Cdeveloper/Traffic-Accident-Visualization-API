@@ -8,6 +8,8 @@ import {
   getAccidentTypeFilter,
   getCategoryFilter,
 } from "@/lib/accidentLabels";
+import { handleApiError, DatabaseError } from "@/lib/errors";
+import { withTimeout } from "@/lib/queryTimeout";
 
 export async function GET(request: NextRequest) {
   try {
@@ -91,12 +93,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    //  Query DB
-    const accidents = await prisma.trafficAccident.findMany({
-      where: whereClause,
-      orderBy: {
-        dateTime: "asc",
-      },
+    //  Query DB with timeout
+    const accidents = await withTimeout(
+      prisma.trafficAccident.findMany({
+        where: whereClause,
+        orderBy: {
+          dateTime: "asc",
+        },
+      })
+    ).catch((error) => {
+      if (error instanceof Error && error.message.includes("timeout")) {
+        throw new DatabaseError("Query timeout - request took too long", error);
+      }
+      throw new DatabaseError("Failed to fetch accidents", error);
     });
 
     //  Transform data to include human-readable labels
@@ -124,10 +133,6 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("Error in /api/accidents:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

@@ -7,7 +7,7 @@ const adapter = new PrismaMariaDb({
   user: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
-  connectionLimit: 5,
+  connectionLimit: parseInt(process.env.DATABASE_CONNECTION_LIMIT || "5", 10),
 });
 
 const globalForPrisma = globalThis as unknown as {

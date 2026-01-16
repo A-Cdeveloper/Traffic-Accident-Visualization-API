@@ -30,6 +30,12 @@ export function proxy(request: NextRequest) {
   if (request.method === "OPTIONS") {
     const response = new NextResponse(null, { status: 204 });
 
+    // Security headers
+    response.headers.set("X-Content-Type-Options", "nosniff");
+    response.headers.set("X-Frame-Options", "DENY");
+    response.headers.set("X-XSS-Protection", "1; mode=block");
+    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+
     if (origin && isOriginAllowed(origin)) {
       response.headers.set("Access-Control-Allow-Origin", origin);
       response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -45,6 +51,12 @@ export function proxy(request: NextRequest) {
 
   // For actual requests, check origin and add CORS headers
   const response = NextResponse.next();
+
+  // Security headers
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
   if (origin && isOriginAllowed(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
