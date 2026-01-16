@@ -42,8 +42,8 @@ function parseDateTime(dateTimeStr: string): Date {
 async function parseXLSX(filePath: string): Promise<
   Array<{
     accidentId: number;
-    city: string;
-    municipality: string;
+    pdepartment: string;
+    pstation: string;
     dateTime: Date;
     longitude: number;
     latitude: number;
@@ -67,8 +67,8 @@ async function parseXLSX(filePath: string): Promise<
       const rowArray = row as unknown[];
       return {
         accidentId: parseInt(String(rowArray[0] || "0")),
-        city: String(rowArray[1] || ""),
-        municipality: String(rowArray[2] || ""),
+        pdepartment: String(rowArray[1] || ""),
+        pstation: String(rowArray[2] || ""),
         dateTime: parseDateTime(String(rowArray[3] || "")),
         longitude: parseFloat(String(rowArray[4] || "0")) || 0,
         latitude: parseFloat(String(rowArray[5] || "0")) || 0,

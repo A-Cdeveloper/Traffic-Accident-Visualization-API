@@ -10,8 +10,8 @@ datasource db {
 model TrafficAccident {
   id           Int      @id @default(autoincrement())
   accidentId   Int      @unique @map("accident_id")
-  city         String
-  municipality String
+  pdepartment  String
+  pstation     String
   dateTime     DateTime @map("date_time")
   longitude    Float
   latitude     Float
@@ -22,10 +22,10 @@ model TrafficAccident {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@index([accidentId])
-  @@index([city])
-  @@index([municipality])
+  @@index([pdepartment])
+  @@index([pstation])
   @@index([dateTime])
-  @@index([municipality, dateTime])
+  @@index([pstation, dateTime])
   @@index([latitude, longitude])
   @@map("traffic_accidents")
 }

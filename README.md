@@ -30,12 +30,12 @@ The project uses MySQL database with Prisma ORM. The database contains traffic a
 
 **Schema:**
 
-- `TrafficAccident` model with fields: accidentId, city, municipality, dateTime, coordinates (longitude, latitude), accidentType, category, description
+- `TrafficAccident` model with fields: accidentId, pdepartment, pstation, dateTime, coordinates (longitude, latitude), accidentType, category, description
 
 **Indexes:**
 
-- Single column indexes on: `accidentId`, `city`, `municipality`, `dateTime`
-- Composite index on: `[municipality, dateTime]` for optimized filtering
+- Single column indexes on: `accidentId`, `pdepartment`, `pstation`, `dateTime`
+- Composite index on: `[pstation, dateTime]` for optimized filtering
 - Composite index on: `[latitude, longitude]` for geospatial queries
 
 **Setup:**
@@ -72,11 +72,11 @@ This script will:
 
 ### `GET /api/accidents`
 
-Returns traffic accident data filtered by municipality and optional year range.
+Returns traffic accident data filtered by pstation and optional year range.
 
 **Query Parameters:**
 
-- `municipality` (required) - Municipality name to filter by
+- `pstation` (required) - Police station name to filter by
   - Must be between 1-100 characters
   - Automatically trimmed
 - `years` (optional) - Comma-separated list of years (e.g., `2020,2021,2022`)
@@ -86,22 +86,22 @@ Returns traffic accident data filtered by municipality and optional year range.
 **Example Request:**
 
 ```
-GET /api/accidents?municipality=Beograd&years=2023,2024
+GET /api/accidents?pstation=Beograd&years=2023,2024
 ```
 
 **Response:**
 
 ```
 {
-  "municipality": "Beograd",
+  "pstation": "Beograd",
   "years": [2023, 2024],
   "total": 150,
   "data": [
     {
       "id": 1,
       "accidentId": 12345,
-      "city": "Beograd",
-      "municipality": "Beograd",
+      "pdepartment": "Beograd",
+      "pstation": "Beograd",
       "dateTime": "2023-01-15T10:30:00.000Z",
       "longitude": 20.4489,
       "latitude": 44.7866,

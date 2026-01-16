@@ -2,10 +2,10 @@
 import { z } from "zod";
 
 export const accidentsQuerySchema = z.object({
-  municipality: z
+  pstation: z
     .string()
-    .min(1, "Municipality is required")
-    .max(100, "Municipality name too long")
+    .min(1, "Pstation is required")
+    .max(100, "Pstation name too long")
     .trim(),
   years: z
     .string()

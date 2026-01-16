@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Convert URLSearchParams to object for Zod
     const params = {
-      municipality: searchParams.get("municipality") || undefined,
+      pstation: searchParams.get("pstation") || undefined,
       years: searchParams.get("years") || undefined,
     };
 
@@ -32,20 +32,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { municipality, years } = validationResult.data;
+    const { pstation, years } = validationResult.data;
 
     // Years is already validated and parsed by Zod
     const yearsArray = years ?? [];
 
     //  Build where clause
     const whereClause: {
-      municipality: string;
+      pstation: string;
       dateTime?: {
         gte: Date;
         lte: Date;
       };
     } = {
-      municipality,
+      pstation,
     };
 
     //  Apply year range filter (optimized)
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     //  Response
     return NextResponse.json(
       {
-        municipality,
+        pstation,
         years: yearsArray.length > 0 ? yearsArray : "all",
         total: accidents.length,
         data: accidents,
