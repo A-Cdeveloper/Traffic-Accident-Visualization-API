@@ -1,5 +1,6 @@
 // lib/validations/accidents.ts
 import { z } from "zod";
+import { VALID_ACCIDENT_TYPES } from "@/lib/accidentLabels";
 
 // ISO date format regex: YYYY-MM-DD
 const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -28,6 +29,20 @@ export const accidentsQuerySchema = z
       .trim(),
     startDate: isoDateSchema.optional(),
     endDate: isoDateSchema.optional(),
+    accidentType: z
+      .string()
+      .refine(
+        (val) =>
+          VALID_ACCIDENT_TYPES.includes(
+            val as (typeof VALID_ACCIDENT_TYPES)[number]
+          ),
+        {
+          message: `accidentType must be one of: ${VALID_ACCIDENT_TYPES.join(
+            ", "
+          )}`,
+        }
+      )
+      .optional(),
   })
   .refine(
     (data) => {

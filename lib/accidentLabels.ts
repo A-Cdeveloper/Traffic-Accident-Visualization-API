@@ -1,86 +1,80 @@
 /**
- * Maps accident type strings to human-readable format
- * Handles variations in input data
+ * Maps accident type strings from database to human-readable format
  */
 export function getAccidentTypeLabel(type: string): string {
-  const normalized = type.trim().toLowerCase();
+  const trimmed = type.trim();
 
-  if (
-    normalized.includes("materijaln") ||
-    normalized.includes("štetom") ||
-    normalized.includes("stetom")
-  ) {
+  if (trimmed === "Sa mat.stetom") {
     return "Sa materijalnom štetom";
   }
 
-  if (
-    normalized.includes("povređenim") ||
-    normalized.includes("povredjenim") ||
-    normalized.includes("povređen") ||
-    normalized.includes("povredjen")
-  ) {
+  if (trimmed === "Sa povredjenim") {
     return "Sa povređenim";
   }
 
-  if (normalized.includes("poginulim") || normalized.includes("poginul")) {
+  if (trimmed === "Sa poginulim") {
     return "Sa poginulim";
   }
 
   // Return original if no match found
-  return type.trim();
+  return trimmed;
 }
 
 /**
- * Maps category strings to human-readable format
- * Handles variations in input data
+ * Maps category strings from database to human-readable format
  */
 export function getCategoryLabel(category: string): string {
-  const normalized = category.trim().toLowerCase();
+  const trimmed = category.trim();
 
-  // SN SA JEDNIM VOZILOM
-  if (
-    normalized.includes("jednim vozilom") ||
-    normalized.includes("jedno vozilo")
-  ) {
-    return "SN sa jednim vozilom";
+  if (trimmed === "SN SA JEDNIM VOZILOM") {
+    return "Jedno vozilo";
   }
 
-  // SN SA NAJMANjE DVA VOZILA – BEZ SKRETANjA
-  if (
-    (normalized.includes("najmanje dva vozila") ||
-      normalized.includes("najmanj dva vozila")) &&
-    normalized.includes("bez skretanja")
-  ) {
+  if (trimmed === "SN SA NAJMANjE DVA VOZILA – BEZ SKRETANjA") {
     return "Najmanje dva vozila – bez skretanja";
   }
 
-  // SN SA NAJMANjE DVA VOZILA – SKRETANjE ILI PRELAZAK
-  if (
-    (normalized.includes("najmanje dva vozila") ||
-      normalized.includes("najmanj dva vozila")) &&
-    (normalized.includes("skretanje") || normalized.includes("prelazak"))
-  ) {
+  if (trimmed === "SN SA NAJMANjE DVA VOZILA – SKRETANjE ILI PRELAZAK") {
     return "Najmanje dva vozila – skretanje ili prelazak";
   }
 
-  // SN SA PARKIRANIM VOZILIMA
-  if (
-    normalized.includes("parkiranim vozilima") ||
-    normalized.includes("parkiranim")
-  ) {
+  if (trimmed === "SN SA PARKIRANIM VOZILIMA") {
     return "Parkirana vozila";
   }
 
-  // SN SA PEŠACIMA
-  if (
-    normalized.includes("pešacima") ||
-    normalized.includes("pesacima") ||
-    normalized.includes("pešak") ||
-    normalized.includes("pesak")
-  ) {
+  if (trimmed === "SN SA PEŠACIMA") {
     return "Pešaci";
   }
 
   // Return original if no match found
-  return category.trim();
+  return trimmed;
+}
+
+/**
+ * Valid accident type labels for API filter (short format)
+ */
+export const VALID_ACCIDENT_TYPES = [
+  "materijalna",
+  "povredjeni",
+  "poginuli",
+] as const;
+
+/**
+ * Maps short accident type label to database format for filtering
+ */
+export function getAccidentTypeFilter(label: string): string {
+  if (label === "materijalna") {
+    return "Sa mat.stetom";
+  }
+
+  if (label === "povredjeni") {
+    return "Sa povredjenim";
+  }
+
+  if (label === "poginuli") {
+    return "Sa poginulim";
+  }
+
+  // Fallback
+  return label;
 }

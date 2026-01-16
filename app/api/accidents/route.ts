@@ -5,6 +5,7 @@ import { accidentsQuerySchema } from "@/lib/zod";
 import {
   getAccidentTypeLabel,
   getCategoryLabel,
+  getAccidentTypeFilter,
 } from "@/lib/accidentLabels";
 
 export async function GET(request: NextRequest) {
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
       pstation: searchParams.get("pstation") || undefined,
       startDate: searchParams.get("startDate") || undefined,
       endDate: searchParams.get("endDate") || undefined,
+      accidentType: searchParams.get("accidentType") || undefined,
     };
 
     // Validate with Zod
@@ -37,11 +39,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { pstation, startDate, endDate } = validationResult.data;
+    const { pstation, startDate, endDate, accidentType } =
+      validationResult.data;
 
     //  Build where clause
     const whereClause: {
       pstation: string;
+      accidentType?: string;
       dateTime?: {
         gte?: Date;
         lte?: Date;
@@ -49,6 +53,11 @@ export async function GET(request: NextRequest) {
     } = {
       pstation,
     };
+
+    //  Apply accidentType filter
+    if (accidentType) {
+      whereClause.accidentType = getAccidentTypeFilter(accidentType);
+    }
 
     //  Apply date range filter
     if (startDate || endDate) {
@@ -90,6 +99,7 @@ export async function GET(request: NextRequest) {
         pstation,
         startDate: startDate?.toISOString().split("T")[0] || null,
         endDate: endDate?.toISOString().split("T")[0] || null,
+        accidentType: accidentType || null,
         total: accidents.length,
         data: transformedData,
       },
