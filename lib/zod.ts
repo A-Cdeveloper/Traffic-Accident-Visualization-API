@@ -1,6 +1,6 @@
 // lib/validations/accidents.ts
 import { z } from "zod";
-import { VALID_ACCIDENT_TYPES } from "@/lib/accidentLabels";
+import { VALID_ACCIDENT_TYPES, VALID_CATEGORIES } from "@/lib/accidentLabels";
 
 // ISO date format regex: YYYY-MM-DD
 const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -43,6 +43,26 @@ export const accidentsQuerySchema = z
         }
       )
       .optional(),
+    categories: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (!val) return undefined;
+        const categories = val.split(",").map((c) => c.trim());
+        // Validate each category
+        const invalid = categories.filter(
+          (c) =>
+            !VALID_CATEGORIES.includes(c as (typeof VALID_CATEGORIES)[number])
+        );
+        if (invalid.length > 0) {
+          throw new Error(
+            `Invalid categories: ${invalid.join(
+              ", "
+            )}. Must be one of: ${VALID_CATEGORIES.join(", ")}`
+          );
+        }
+        return categories;
+      }),
   })
   .refine(
     (data) => {

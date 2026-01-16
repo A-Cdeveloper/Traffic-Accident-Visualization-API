@@ -78,3 +78,42 @@ export function getAccidentTypeFilter(label: string): string {
   // Fallback
   return label;
 }
+
+/**
+ * Valid category labels for API filter (short format)
+ */
+export const VALID_CATEGORIES = [
+  "jedno-vozilo",
+  "bez-skretanja",
+  "skretanje-prelazak",
+  "parkirana",
+  "pesaci",
+] as const;
+
+/**
+ * Maps short category label to database format for filtering
+ */
+export function getCategoryFilter(label: string): string {
+  if (label === "jedno-vozilo") {
+    return "SN SA JEDNIM VOZILOM";
+  }
+
+  if (label === "bez-skretanja") {
+    return "SN SA NAJMANjE DVA VOZILA – BEZ SKRETANjA";
+  }
+
+  if (label === "skretanje-prelazak") {
+    return "SN SA NAJMANjE DVA VOZILA – SKRETANjE ILI PRELAZAK";
+  }
+
+  if (label === "parkirana") {
+    return "SN SA PARKIRANIM VOZILIMA";
+  }
+
+  if (label === "pesaci") {
+    return "SN SA PEŠACIMA";
+  }
+
+  // Fallback
+  return label;
+}

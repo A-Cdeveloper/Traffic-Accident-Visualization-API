@@ -6,6 +6,7 @@ import {
   getAccidentTypeLabel,
   getCategoryLabel,
   getAccidentTypeFilter,
+  getCategoryFilter,
 } from "@/lib/accidentLabels";
 
 export async function GET(request: NextRequest) {
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest) {
       startDate: searchParams.get("startDate") || undefined,
       endDate: searchParams.get("endDate") || undefined,
       accidentType: searchParams.get("accidentType") || undefined,
+      categories: searchParams.get("categories") || undefined,
     };
 
     // Validate with Zod
@@ -39,13 +41,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { pstation, startDate, endDate, accidentType } =
+    const { pstation, startDate, endDate, accidentType, categories } =
       validationResult.data;
 
     //  Build where clause
     const whereClause: {
       pstation: string;
       accidentType?: string;
+      category?: {
+        in: string[];
+      };
       dateTime?: {
         gte?: Date;
         lte?: Date;
@@ -57,6 +62,14 @@ export async function GET(request: NextRequest) {
     //  Apply accidentType filter
     if (accidentType) {
       whereClause.accidentType = getAccidentTypeFilter(accidentType);
+    }
+
+    //  Apply categories filter (multiple values)
+    if (categories && categories.length > 0) {
+      const dbCategories = categories.map((cat) => getCategoryFilter(cat));
+      whereClause.category = {
+        in: dbCategories,
+      };
     }
 
     //  Apply date range filter
@@ -100,6 +113,7 @@ export async function GET(request: NextRequest) {
         startDate: startDate?.toISOString().split("T")[0] || null,
         endDate: endDate?.toISOString().split("T")[0] || null,
         accidentType: accidentType || null,
+        categories: categories || null,
         total: accidents.length,
         data: transformedData,
       },
