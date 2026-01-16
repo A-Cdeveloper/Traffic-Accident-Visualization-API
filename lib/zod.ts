@@ -1,24 +1,43 @@
 // lib/validations/accidents.ts
 import { z } from "zod";
 
-export const accidentsQuerySchema = z.object({
-  pstation: z
-    .string()
-    .min(1, "Pstation is required")
-    .max(100, "Pstation name too long")
-    .trim(),
-  years: z
-    .string()
-    .optional()
-    .transform((val) => {
-      if (!val) return undefined;
-      const years = val.split(",").map((y) => {
-        const num = parseInt(y.trim(), 10);
-        if (isNaN(num) || num < 2000 || num > new Date().getFullYear()) {
-          throw new Error(`Invalid year: ${y.trim()}`);
-        }
-        return num;
-      });
-      return years;
-    }),
-});
+// ISO date format regex: YYYY-MM-DD
+const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+// Custom date validator that parses ISO date string (YYYY-MM-DD) as UTC
+const isoDateSchema = z
+  .string()
+  .regex(isoDateRegex, "Date must be in ISO format (YYYY-MM-DD)")
+  .refine(
+    (val) => {
+      const date = new Date(val + "T00:00:00.000Z");
+      return !isNaN(date.getTime());
+    },
+    {
+      message: "Invalid date",
+    }
+  )
+  .transform((val) => new Date(val + "T00:00:00.000Z")); // Parse as UTC
+
+export const accidentsQuerySchema = z
+  .object({
+    pstation: z
+      .string()
+      .min(1, "Pstation is required")
+      .max(100, "Pstation name too long")
+      .trim(),
+    startDate: isoDateSchema.optional(),
+    endDate: isoDateSchema.optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.startDate && data.endDate) {
+        return data.endDate >= data.startDate;
+      }
+      return true;
+    },
+    {
+      message: "startDate cannot be greater than endDate",
+      path: ["startDate"],
+    }
+  );

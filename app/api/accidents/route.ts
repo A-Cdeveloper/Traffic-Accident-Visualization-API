@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
     // Convert URLSearchParams to object for Zod
     const params = {
       pstation: searchParams.get("pstation") || undefined,
-      years: searchParams.get("years") || undefined,
+      startDate: searchParams.get("startDate") || undefined,
+      endDate: searchParams.get("endDate") || undefined,
     };
 
     // Validate with Zod
@@ -32,31 +33,36 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { pstation, years } = validationResult.data;
-
-    // Years is already validated and parsed by Zod
-    const yearsArray = years ?? [];
+    const { pstation, startDate, endDate } = validationResult.data;
 
     //  Build where clause
     const whereClause: {
       pstation: string;
       dateTime?: {
-        gte: Date;
-        lte: Date;
+        gte?: Date;
+        lte?: Date;
       };
     } = {
       pstation,
     };
 
-    //  Apply year range filter (optimized)
-    if (yearsArray.length > 0) {
-      const minYear = Math.min(...yearsArray);
-      const maxYear = Math.max(...yearsArray);
+    //  Apply date range filter
+    if (startDate || endDate) {
+      whereClause.dateTime = {};
 
-      whereClause.dateTime = {
-        gte: new Date(`${minYear}-01-01T00:00:00Z`),
-        lte: new Date(`${maxYear}-12-31T23:59:59Z`),
-      };
+      if (startDate) {
+        // Set to start of day in UTC (00:00:00.000)
+        const start = new Date(startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        whereClause.dateTime.gte = start;
+      }
+
+      if (endDate) {
+        // Set to end of day in UTC (23:59:59.999)
+        const end = new Date(endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        whereClause.dateTime.lte = end;
+      }
     }
 
     //  Query DB
@@ -71,7 +77,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         pstation,
-        years: yearsArray.length > 0 ? yearsArray : "all",
+        startDate: startDate?.toISOString().split("T")[0] || null,
+        endDate: endDate?.toISOString().split("T")[0] || null,
         total: accidents.length,
         data: accidents,
       },
