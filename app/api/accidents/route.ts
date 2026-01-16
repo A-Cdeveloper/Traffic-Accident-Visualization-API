@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { accidentsQuerySchema } from "@/lib/zod";
+import {
+  getAccidentTypeLabel,
+  getCategoryLabel,
+} from "@/lib/accidentLabels";
 
 export async function GET(request: NextRequest) {
   try {
@@ -73,6 +77,13 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    //  Transform data to include human-readable labels
+    const transformedData = accidents.map((accident) => ({
+      ...accident,
+      accidentType: getAccidentTypeLabel(accident.accidentType),
+      category: getCategoryLabel(accident.category),
+    }));
+
     //  Response
     return NextResponse.json(
       {
@@ -80,7 +91,7 @@ export async function GET(request: NextRequest) {
         startDate: startDate?.toISOString().split("T")[0] || null,
         endDate: endDate?.toISOString().split("T")[0] || null,
         total: accidents.length,
-        data: accidents,
+        data: transformedData,
       },
       {
         headers: {
