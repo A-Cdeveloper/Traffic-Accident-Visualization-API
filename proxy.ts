@@ -11,7 +11,7 @@ const getAllowedOrigins = (): string[] => {
     return envOrigins.split(",").map((origin) => origin.trim());
   }
   // Default: Vite dev server
-  return ["http://localhost:5176"];
+  return ["http://localhost:5173"];
 };
 
 /**
