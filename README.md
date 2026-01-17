@@ -25,6 +25,7 @@ The dataset is based on official open data from the Republic of Serbia.
 ✅ Database indexes optimized  
 ✅ Centralized error handling with custom error classes  
 ✅ Health check endpoint for monitoring  
+✅ Metadata endpoint for filter options  
 ✅ Security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy)  
 ✅ Query timeout protection for database queries  
 ✅ Configurable connection pooling
@@ -141,6 +142,65 @@ GET /api/accidents?pstation=Beograd&startDate=2023-01-01&endDate=2023-12-31&acci
 - **Query timeout:** 30 seconds default (configurable via `DATABASE_QUERY_TIMEOUT`)
 - **Optimized queries:** Database queries with composite indexes
 - **Human-readable labels:** Accident types and categories are transformed to readable format in responses
+
+### `GET /api/accidents/metadata`
+
+Returns available filter options for `accidentType` and `categories` with human-readable labels. This endpoint enables frontend to dynamically populate filter dropdowns without hardcoding values.
+
+**Response:**
+
+```json
+{
+  "accidentTypes": [
+    {
+      "value": "materijalna",
+      "label": "Sa materijalnom štetom"
+    },
+    {
+      "value": "povredjeni",
+      "label": "Sa povređenim"
+    },
+    {
+      "value": "poginuli",
+      "label": "Sa poginulim"
+    }
+  ],
+  "categories": [
+    {
+      "value": "jedno-vozilo",
+      "label": "Jedno vozilo"
+    },
+    {
+      "value": "bez-skretanja",
+      "label": "Najmanje dva vozila – bez skretanja"
+    },
+    {
+      "value": "skretanje-prelazak",
+      "label": "Najmanje dva vozila – skretanje ili prelazak"
+    },
+    {
+      "value": "parkirana",
+      "label": "Parkirana vozila"
+    },
+    {
+      "value": "pesaci",
+      "label": "Pešaci"
+    }
+  ]
+}
+```
+
+**Features:**
+
+- **Single source of truth:** Filter options are managed on the backend
+- **Rate limiting:** 100 requests per minute
+- **Caching:** 1 hour (s-maxage=3600) - metadata rarely changes
+- **Error handling:** Centralized error handling with custom error classes
+- **Value/Label format:** `value` is used for API filtering, `label` is for UI display
+
+**Usage:**
+
+Frontend should call this endpoint once on initialization to populate filter dropdowns. The `value` field should be used when making requests to `/api/accidents`, while `label` is displayed to users in the UI.
 
 ### `GET /api/health`
 
