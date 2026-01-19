@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import:initial": "tsx scripts/import-initial.ts"
+    "import:initial": "tsx scripts/import-initial.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.2.0",
