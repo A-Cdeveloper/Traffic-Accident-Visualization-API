@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import * as XLSX from "xlsx";
 import { DATA_SOURCES } from "../constants/data";
+import { parseCoordinate } from "../lib/coordinates";
 
 /**
  * Downloads a file from a URL and saves it to the specified file path
@@ -70,8 +71,14 @@ async function parseXLSX(filePath: string): Promise<
         pdepartment: String(rowArray[1] || ""),
         pstation: String(rowArray[2] || ""),
         dateTime: parseDateTime(String(rowArray[3] || "")),
-        longitude: parseFloat(String(rowArray[4] || "0")) || 0,
-        latitude: parseFloat(String(rowArray[5] || "0")) || 0,
+        longitude: parseCoordinate(
+          rowArray[4] as string | number | null | undefined,
+          true
+        ),
+        latitude: parseCoordinate(
+          rowArray[5] as string | number | null | undefined,
+          false
+        ),
         accidentType: String(rowArray[6] || ""),
         category: String(rowArray[7] || ""),
         description: rowArray[8] ? String(rowArray[8]) : null,
