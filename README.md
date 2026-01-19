@@ -83,6 +83,15 @@ This script will:
 
 ## API Routes
 
+### Production API
+
+**Base URL:** `https://www.tav-api.e-seo.info`
+
+**Example Request:**
+```
+https://www.tav-api.e-seo.info/api/accidents?pstation=VLASOTINCE
+```
+
 ### `GET /api/accidents`
 
 Returns traffic accident data filtered by pstation and optional filters.
@@ -104,6 +113,11 @@ Returns traffic accident data filtered by pstation and optional filters.
 
 ```
 GET /api/accidents?pstation=Beograd&startDate=2023-01-01&endDate=2023-12-31&accidentType=materijalna&categories=jedno-vozilo,bez-skretanja
+```
+
+**Production URL Example:**
+```
+https://www.tav-api.e-seo.info/api/accidents?pstation=VLASOTINCE&startDate=2023-01-01&endDate=2023-12-31
 ```
 
 **Response:**
@@ -146,6 +160,11 @@ GET /api/accidents?pstation=Beograd&startDate=2023-01-01&endDate=2023-12-31&acci
 ### `GET /api/accidents/metadata`
 
 Returns available filter options for `accidentType` and `categories` with human-readable labels. This endpoint enables frontend to dynamically populate filter dropdowns without hardcoding values.
+
+**Production URL:**
+```
+https://www.tav-api.e-seo.info/api/accidents/metadata
+```
 
 **Response:**
 
@@ -205,6 +224,11 @@ Frontend should call this endpoint once on initialization to populate filter dro
 ### `GET /api/health`
 
 Health check endpoint for monitoring and deployment verification.
+
+**Production URL:**
+```
+https://www.tav-api.e-seo.info/api/health
+```
 
 **Response (Success - 200):**
 
