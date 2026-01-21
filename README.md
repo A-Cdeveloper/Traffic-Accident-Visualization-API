@@ -5,9 +5,9 @@ The frontend will be built in a separate React project.
 
 ## Idea
 
-- Download XLSX files with traffic accident statistics published by the Serbian Ministry of Internal Affairs (MUP)
-- Convert XLSX to JSON
-- Expose the JSON through a single API route
+*   Download XLSX files with traffic accident statistics published by the Serbian Ministry of Internal Affairs (MUP)
+*   Convert XLSX to JSON
+*   Expose the JSON through a single API route
 
 ## Data Source
 
@@ -36,13 +36,13 @@ The project uses MySQL database with Prisma ORM. The database contains traffic a
 
 **Schema:**
 
-- `TrafficAccident` model with fields: accidentId, pdepartment, pstation, dateTime, coordinates (longitude, latitude), accidentType, category, description
+*   `TrafficAccident` model with fields: accidentId, pdepartment, pstation, dateTime, coordinates (longitude, latitude), accidentType, category, description
 
 **Indexes:**
 
-- Single column indexes on: `accidentId`, `pdepartment`, `pstation`, `dateTime`
-- Composite index on: `[pstation, dateTime]` for optimized filtering
-- Composite index on: `[latitude, longitude]` for geospatial queries
+*   Single column indexes on: `accidentId`, `pdepartment`, `pstation`, `dateTime`
+*   Composite index on: `[pstation, dateTime]` for optimized filtering
+*   Composite index on: `[latitude, longitude]` for geospatial queries
 
 **Setup:**
 
@@ -50,17 +50,17 @@ The project uses MySQL database with Prisma ORM. The database contains traffic a
 
 **Required:**
 
-- `DATABASE_HOST` - Database host
-- `DATABASE_USER` - Database username
-- `DATABASE_PASSWORD` - Database password
-- `DATABASE_NAME` - Database name
-- `DATABASE_URL` - Full database connection string
+*   `DATABASE_HOST` - Database host
+*   `DATABASE_USER` - Database username
+*   `DATABASE_PASSWORD` - Database password
+*   `DATABASE_NAME` - Database name
+*   `DATABASE_URL` - Full database connection string
 
 **Optional:**
 
-- `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins (default: `http://localhost:5176`)
-- `DATABASE_CONNECTION_LIMIT` - Connection pool limit (default: `5`)
-- `DATABASE_QUERY_TIMEOUT` - Query timeout in milliseconds (default: `30000` = 30 seconds)
+*   `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins (default: `http://localhost:5176`)
+*   `DATABASE_CONNECTION_LIMIT` - Connection pool limit (default: `5`)
+*   `DATABASE_QUERY_TIMEOUT` - Query timeout in milliseconds (default: `30000` = 30 seconds)
 
 1.  Run migrations: `npx prisma migrate dev`
 2.  Generate Prisma Client: `npx prisma generate`
@@ -77,9 +77,43 @@ npm run import:initial
 
 This script will:
 
-- Download XLSX files from data.gov.rs (2020-2025)
-- Parse and convert to database format
-- Insert data using batch processing for performance
+*   Download XLSX files from data.gov.rs (2020-2025)
+*   Parse and convert to database format
+*   Use `upsert` to update existing records and create new ones
+*   Insert data using batch processing for performance
+
+### Automated Monthly Updates (GitHub Actions)
+
+The project includes a GitHub Actions workflow that automatically runs the import script once per month.
+
+**Setup:**
+
+Go to your GitHub repository → Settings → Secrets and variables → Actions
+
+Add the following secrets:
+
+*   `DATABASE_HOST` - Your production database host
+*   `DATABASE_USER` - Your production database username
+*   `DATABASE_PASSWORD` - Your production database password
+*   `DATABASE_NAME` - Your production database name
+*   `DATABASE_URL` - Your full production database connection string
+
+The workflow will automatically run on the 29th of every month at 2:00 AM UTC
+
+**Manual trigger:**
+
+You can also manually trigger the workflow:
+
+*   Go to Actions tab → "Monthly Data Import" → "Run workflow"
+
+**Workflow features:**
+
+*   Runs on GitHub infrastructure
+*   Automatically creates a GitHub issue if import fails
+*   Uses `upsert` to safely update existing data and add new records
+*   Processes all years from `constants/data.ts`
+
+**Note:** The workflow processes all years, but since it uses `upsert`, it only adds new records (e.g., December 2025 data) without creating duplicates.
 
 ## API Routes
 
@@ -88,6 +122,7 @@ This script will:
 **Base URL:** `https://www.tav-api.e-seo.info`
 
 **Example Request:**
+
 ```
 https://www.tav-api.e-seo.info/api/accidents?pstation=VLASOTINCE
 ```
@@ -98,16 +133,16 @@ Returns traffic accident data filtered by pstation and optional filters.
 
 **Query Parameters:**
 
-- `pstation` (required) - Police station name to filter by
-  - Must be between 1-100 characters
-  - Automatically trimmed
-- `startDate` (optional) - Start date in ISO format (YYYY-MM-DD)
-- `endDate` (optional) - End date in ISO format (YYYY-MM-DD)
-  - Must be greater than or equal to `startDate`
-- `accidentType` (optional) - Filter by accident type
-  - Valid values: `materijalna`, `povredjeni`, `poginuli`
-- `categories` (optional) - Comma-separated list of categories
-  - Valid values: `jedno-vozilo`, `bez-skretanja`, `sa-skretanjem`, `parkirana`, `pesaci`
+*   `pstation` (required) - Police station name to filter by
+    *   Must be between 1-100 characters
+    *   Automatically trimmed
+*   `startDate` (optional) - Start date in ISO format (YYYY-MM-DD)
+*   `endDate` (optional) - End date in ISO format (YYYY-MM-DD)
+    *   Must be greater than or equal to `startDate`
+*   `accidentType` (optional) - Filter by accident type
+    *   Valid values: `materijalna`, `povredjeni`, `poginuli`
+*   `categories` (optional) - Comma-separated list of categories
+    *   Valid values: `jedno-vozilo`, `bez-skretanja`, `sa-skretanjem`, `parkirana`, `pesaci`
 
 **Example Request:**
 
@@ -116,6 +151,7 @@ GET /api/accidents?pstation=Beograd&startDate=2023-01-01&endDate=2023-12-31&acci
 ```
 
 **Production URL Example:**
+
 ```
 https://www.tav-api.e-seo.info/api/accidents?pstation=VLASOTINCE&startDate=2023-01-01&endDate=2023-12-31
 ```
@@ -149,26 +185,27 @@ https://www.tav-api.e-seo.info/api/accidents?pstation=VLASOTINCE&startDate=2023-
 
 **Features:**
 
-- **Input Validation:** Zod schema validation for all query parameters
-- **Rate limiting:** 100 requests per minute
-- **Caching:** 5 minutes (s-maxage=300)
-- **Error handling:** Centralized error handling with custom error classes
-- **Query timeout:** 30 seconds default (configurable via `DATABASE_QUERY_TIMEOUT`)
-- **Optimized queries:** Database queries with composite indexes
-- **Human-readable labels:** Accident types and categories are transformed to readable format in responses
+*   **Input Validation:** Zod schema validation for all query parameters
+*   **Rate limiting:** 100 requests per minute
+*   **Caching:** 5 minutes (s-maxage=300)
+*   **Error handling:** Centralized error handling with custom error classes
+*   **Query timeout:** 30 seconds default (configurable via `DATABASE_QUERY_TIMEOUT`)
+*   **Optimized queries:** Database queries with composite indexes
+*   **Human-readable labels:** Accident types and categories are transformed to readable format in responses
 
 ### `GET /api/accidents/metadata`
 
 Returns available filter options for `accidentType` and `categories` with human-readable labels. This endpoint enables frontend to dynamically populate filter dropdowns without hardcoding values.
 
 **Production URL:**
+
 ```
 https://www.tav-api.e-seo.info/api/accidents/metadata
 ```
 
 **Response:**
 
-```json
+```
 {
   "accidentTypes": [
     {
@@ -211,11 +248,11 @@ https://www.tav-api.e-seo.info/api/accidents/metadata
 
 **Features:**
 
-- **Single source of truth:** Filter options are managed on the backend
-- **Rate limiting:** 100 requests per minute
-- **Caching:** 1 hour (s-maxage=3600) - metadata rarely changes
-- **Error handling:** Centralized error handling with custom error classes
-- **Value/Label format:** `value` is used for API filtering, `label` is for UI display
+*   **Single source of truth:** Filter options are managed on the backend
+*   **Rate limiting:** 100 requests per minute
+*   **Caching:** 1 hour (s-maxage=3600) - metadata rarely changes
+*   **Error handling:** Centralized error handling with custom error classes
+*   **Value/Label format:** `value` is used for API filtering, `label` is for UI display
 
 **Usage:**
 
@@ -226,6 +263,7 @@ Frontend should call this endpoint once on initialization to populate filter dro
 Health check endpoint for monitoring and deployment verification.
 
 **Production URL:**
+
 ```
 https://www.tav-api.e-seo.info/api/health
 ```
@@ -252,9 +290,9 @@ https://www.tav-api.e-seo.info/api/health
 
 **Features:**
 
-- Checks database connectivity with a simple query
-- 5-second timeout for health check queries
-- Returns appropriate HTTP status codes (200 for healthy, 503 for unhealthy)
+*   Checks database connectivity with a simple query
+*   5-second timeout for health check queries
+*   Returns appropriate HTTP status codes (200 for healthy, 503 for unhealthy)
 
 ## Local Development
 
@@ -266,10 +304,10 @@ npm run dev
 
 **Available scripts:**
 
-- `npm run dev` - Start Next.js development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run import:initial` - Import initial data from XLSX files
+*   `npm run dev` - Start Next.js development server
+*   `npm run build` - Build for production
+*   `npm run start` - Start production server
+*   `npm run import:initial` - Import initial data from XLSX files
 
 ## CORS Configuration
 
@@ -277,9 +315,9 @@ The API implements CORS (Cross-Origin Resource Sharing) via Next.js 16 `proxy.ts
 
 **Implementation:**
 
-- CORS is handled at the network boundary using `proxy.ts` (Next.js 16 replaces middleware)
-- All API routes (`/api/*`) are protected by the proxy
-- Preflight OPTIONS requests are automatically handled
+*   CORS is handled at the network boundary using `proxy.ts` (Next.js 16 replaces middleware)
+*   All API routes (`/api/*`) are protected by the proxy
+*   Preflight OPTIONS requests are automatically handled
 
 **Configuration:**
 
@@ -293,31 +331,31 @@ ALLOWED_ORIGINS=http://localhost:5176
 ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com,https://app.yourdomain.com
 ```
 
-- Default: `http://localhost:5176` (Vite dev server)
-- Multiple origins: Separate with commas (spaces are automatically trimmed)
+*   Default: `http://localhost:5176` (Vite dev server)
+*   Multiple origins: Separate with commas (spaces are automatically trimmed)
 
 **Security:**
 
-- Only requests from allowed origins will be processed
-- Returns `403 Forbidden` for requests from unauthorized origins
-- Supports preflight OPTIONS requests for CORS
-- CORS headers are added automatically for allowed origins
+*   Only requests from allowed origins will be processed
+*   Returns `403 Forbidden` for requests from unauthorized origins
+*   Supports preflight OPTIONS requests for CORS
+*   CORS headers are added automatically for allowed origins
 
 **Security Headers:**
 
 All API responses include the following security headers:
 
-- `X-Content-Type-Options: nosniff` - Prevents MIME type sniffing
-- `X-Frame-Options: DENY` - Prevents clickjacking attacks
-- `X-XSS-Protection: 1; mode=block` - XSS protection
-- `Referrer-Policy: strict-origin-when-cross-origin` - Controls referrer information
+*   `X-Content-Type-Options: nosniff` - Prevents MIME type sniffing
+*   `X-Frame-Options: DENY` - Prevents clickjacking attacks
+*   `X-XSS-Protection: 1; mode=block` - XSS protection
+*   `Referrer-Policy: strict-origin-when-cross-origin` - Controls referrer information
 
 ## Rate Limiting
 
 The API implements rate limiting to prevent abuse:
 
-- **Limit:** 100 requests per minute per IP address
-- **Response:** Returns `429 Too Many Requests` when limit is exceeded
+*   **Limit:** 100 requests per minute per IP address
+*   **Response:** Returns `429 Too Many Requests` when limit is exceeded
 
 ## Error Handling
 
@@ -325,50 +363,50 @@ The API includes comprehensive error handling with centralized error management:
 
 **Error Classes:**
 
-- `ApiError` - Base error class for all API errors
-- `ValidationError` - For validation failures (400)
-- `DatabaseError` - For database operation failures (500)
-- `NotFoundError` - For missing resources (404)
+*   `ApiError` - Base error class for all API errors
+*   `ValidationError` - For validation failures (400)
+*   `DatabaseError` - For database operation failures (500)
+*   `NotFoundError` - For missing resources (404)
 
 **HTTP Status Codes:**
 
-- **400 Bad Request:** Missing or invalid parameters
-  - Returns detailed Zod validation errors with field-specific messages
-  - Example: `{ error: "Invalid request parameters", details: [...] }`
-- **403 Forbidden:** Origin not allowed (CORS violation)
-- **404 Not Found:** Resource not found (Prisma P2025 error)
-- **409 Conflict:** Duplicate entry (Prisma P2002 error)
-- **429 Too Many Requests:** Rate limit exceeded
-- **500 Internal Server Error:** Server-side errors
-- **503 Service Unavailable:** Database connection failures or query timeouts
+*   **400 Bad Request:** Missing or invalid parameters
+    *   Returns detailed Zod validation errors with field-specific messages
+    *   Example: `{ error: "Invalid request parameters", details: [...] }`
+*   **403 Forbidden:** Origin not allowed (CORS violation)
+*   **404 Not Found:** Resource not found (Prisma P2025 error)
+*   **409 Conflict:** Duplicate entry (Prisma P2002 error)
+*   **429 Too Many Requests:** Rate limit exceeded
+*   **500 Internal Server Error:** Server-side errors
+*   **503 Service Unavailable:** Database connection failures or query timeouts
 
 **Prisma Error Handling:**
 
-- Automatically handles Prisma-specific error codes (P2002, P2025, etc.)
-- Query timeout errors are caught and returned as 500/503 errors
-- All errors are handled through `handleApiError()` function
+*   Automatically handles Prisma-specific error codes (P2002, P2025, etc.)
+*   Query timeout errors are caught and returned as 500/503 errors
+*   All errors are handled through `handleApiError()` function
 
 **Validation:**
 
-- All query parameters are validated using Zod schemas
-- Invalid input is rejected early with clear error messages
-- Type-safe validation ensures data integrity
+*   All query parameters are validated using Zod schemas
+*   Invalid input is rejected early with clear error messages
+*   Type-safe validation ensures data integrity
 
 ## Performance Optimizations
 
-- **Database Indexes:** Composite indexes on frequently queried fields
-- **Response Caching:** HTTP cache headers for improved performance
-- **Batch Processing:** Efficient data import with batch transactions
-- **Connection Pooling:** Configurable connection pool limit (default: 5)
-- **Query Timeout:** Prevents long-running queries from blocking the API (default: 30 seconds)
+*   **Database Indexes:** Composite indexes on frequently queried fields
+*   **Response Caching:** HTTP cache headers for improved performance
+*   **Batch Processing:** Efficient data import with batch transactions
+*   **Connection Pooling:** Configurable connection pool limit (default: 5)
+*   **Query Timeout:** Prevents long-running queries from blocking the API (default: 30 seconds)
 
 ## Architecture
 
 **Next.js 16 App Router:**
 
-- Uses `proxy.ts` for request interception (replaces middleware in Next.js 16)
-- Proxy handles CORS at the network boundary before requests reach route handlers
-- All `/api/*` routes are protected by the proxy configuration
+*   Uses `proxy.ts` for request interception (replaces middleware in Next.js 16)
+*   Proxy handles CORS at the network boundary before requests reach route handlers
+*   All `/api/*` routes are protected by the proxy configuration
 
 **Request Flow:**
 
