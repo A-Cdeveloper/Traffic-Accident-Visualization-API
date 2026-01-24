@@ -8,7 +8,9 @@ import {
   getAccidentTypeFilter,
   getCategoryFilter,
 } from "@/lib/accidentLabels";
-import { handleApiError } from "@/lib/errors";
+import { handleApiError, DatabaseError } from "@/lib/errors";
+import { prisma } from "@/lib/prisma";
+import { withTimeout } from "@/lib/queryTimeout";
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,10 +31,28 @@ export async function GET(request: NextRequest) {
       label: getCategoryLabel(getCategoryFilter(cat)),
     }));
 
+    // Get last accident date from database
+    const lastUpdated = await withTimeout(
+      prisma.trafficAccident.findFirst({
+        orderBy: {
+          dateTime: "desc",
+        },
+        select: {
+          dateTime: true,
+        },
+      })
+    ).catch((error) => {
+      if (error instanceof Error && error.message.includes("timeout")) {
+        throw new DatabaseError("Query timeout - request took too long", error);
+      }
+      throw new DatabaseError("Failed to fetch last accident date", error);
+    });
+
     return NextResponse.json(
       {
         accidentTypes,
         categories,
+        lastUpdated: lastUpdated?.dateTime.toISOString() || null,
       },
       {
         headers: {
