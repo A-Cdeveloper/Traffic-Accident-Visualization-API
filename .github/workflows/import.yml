@@ -9,6 +9,15 @@ on:
 jobs:
   import:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+      DATABASE_USER: ${{ secrets.DATABASE_USER }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
     steps:
       - name: Checkout repository
@@ -27,12 +36,6 @@ jobs:
         run: npx prisma generate
 
       - name: Run data import
-        env:
-          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
-          DATABASE_USER: ${{ secrets.DATABASE_USER }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run import:initial
 
       - name: Notify on failure
