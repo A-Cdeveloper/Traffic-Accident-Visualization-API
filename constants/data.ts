@@ -11,4 +11,6 @@ export const DATA_SOURCES = {
     "https://data.gov.rs/sr/datasets/r/9fc37c8a-d90f-4442-82fc-4203ab6f5f77",
   "2025":
     "https://data.gov.rs/sr/datasets/r/a86a3683-000e-481b-9111-c1326966c460",
+  "2026":
+    "https://data.gov.rs/sr/datasets/r/5634c7be-1ec3-4139-8a63-6cbd09dfdc9b",
 } as const;
