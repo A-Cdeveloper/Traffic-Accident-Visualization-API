@@ -3,6 +3,10 @@
 This Next.js project is intended solely as an API service.  
 The frontend will be built in a separate React project.
 
+## Dependencies and security patching
+
+The service runs on **Next.js 16** and **React 19**. For coordinated security releases from Vercel and the React team, keep **Next.js** at **16.2.6 or newer** within the 16.x line and **React** at **19.2.6 or newer** within the 19.2.x line unless the changelog specifies otherwise (for example the [Next.js May 2026 security release](https://vercel.com/changelog/next-js-may-2026-security-release), which also covers related `react-server-dom-*` fixes). After upgrading dependencies, run `npm run build` before deploying.
+
 ## Idea
 
 *   Download XLSX files with traffic accident statistics published by the Serbian Ministry of Internal Affairs (MUP)
